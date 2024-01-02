@@ -1,33 +1,110 @@
 package com.xupt.opengaugepro.imageprocessing;
 
-import org.opencv.core.Mat;
+import org.opencv.core.*;
 import org.opencv.imgcodecs.Imgcodecs;
+import org.opencv.imgproc.Imgproc;
 
 public class ImageProcessingService {
+
+    // 放大图像
+    public Mat zoomIn(Mat image) {
+        Mat zoomedImage = new Mat();
+        Size size = new Size(image.width() * 2, image.height() * 2); // 放大尺寸
+        Imgproc.resize(image, zoomedImage, size);
+        return zoomedImage;
+    }
+
+    // 缩小图像
+    public Mat zoomOut(Mat image) {
+        Mat zoomedImage = new Mat();
+        Size size = new Size(image.width() * 0.8, image.height() * 0.8); // 缩小尺寸
+        Imgproc.resize(image, zoomedImage, size);
+        return zoomedImage;
+    }
 
     // 加载图像
     public Mat loadImage(String filePath) {
         return Imgcodecs.imread(filePath);
     }
 
-    // 示例：表盘提取方法
+    // 去噪声
+    public Mat denoise(Mat image) {
+        Mat denoisedImage = new Mat();
+        Imgproc.GaussianBlur(image, denoisedImage, new Size(5, 5), 0);
+        return denoisedImage;
+    }
+
+    // 调整亮度和对比度
+    public Mat adjustBrightnessContrast(Mat image, double alpha, double beta) {
+        Mat newImage = new Mat();
+        image.convertTo(newImage, -1, alpha, beta);
+        return newImage;
+    }
+
+    // 转换为灰度图
+    public Mat toGrayScale(Mat image) {
+        Mat grayImage = new Mat();
+        Imgproc.cvtColor(image, grayImage, Imgproc.COLOR_BGR2GRAY);
+        return grayImage;
+    }
+
+    // 提取表盘图像（示例）
     public Mat extractDial(Mat image) {
-        // 在这里实现表盘提取的逻辑
+        // 在这里添加提取表盘的逻辑
         // ...
-
-        return image; // 返回处理后的图像
+        return image;
     }
 
-    // 示例：图像增强处理方法
+    // 增强处理表盘图像
     public Mat enhanceImage(Mat image) {
-        // 在这里实现图像增强的逻辑
+        // 在这里添加增强处理的逻辑
         // ...
+        return image;
+    }
+    public Mat detectDial(Mat image) {
+        Mat grayImage = new Mat();
+        Imgproc.cvtColor(image, grayImage, Imgproc.COLOR_BGR2GRAY);
+        Imgproc.GaussianBlur(grayImage, grayImage, new Size(9, 9), 2, 2);
 
-        return image; // 返回处理后的图像
+        Mat circles = new Mat();
+        Imgproc.HoughCircles(grayImage, circles, Imgproc.HOUGH_GRADIENT, 1, grayImage.rows() / 8, 100, 20, 0, 0);
+
+        Mat mask = Mat.zeros(image.size(), CvType.CV_8U);
+
+        // 处理检测到的圆（此处只处理第一个检测到的圆）
+        if (circles.cols() > 0) {
+            double[] c = circles.get(0, 0);
+            Point center = new Point(Math.round(c[0]), Math.round(c[1]));
+            int radius = (int) Math.round(c[2]);
+
+            // 创建一个只包含圆形区域的掩模
+            Imgproc.circle(mask, center, radius, new Scalar(255,255,255), -1);
+        }
+
+        Mat dial = new Mat();
+        image.copyTo(dial, mask); // 使用掩模提取圆形区域
+        return dial;
     }
 
-    public static void main(String[] args) {
-        String s = "在现代社会，人类对视觉信息的依赖极大，超过八成的外界信息通过视觉获取。随着科技进步，机器视觉作为一种模拟和扩展人类视觉的技术，越来越受到重视。这种技术通过电子化地感知和理解图像，能够在不同领域复制甚至超越人类的视觉效果，如医学检测、工业检测、航空航天等。机器视觉系统通常包括照明光源、图像采集、处理分析系统和智能理解决策模块等，通过这些系统处理和分析图像，为决策和动作执行提供依据。尤其在指针式仪表的识别上，机器视觉技术可克服人工读数的不准确性和效率低下，提高读数准确性和工作效率。随着社会向数字化、智能化发展，机器视觉在自动化、智能化的推进中扮演着关键角色，尤其是在数据采集和传输方面，为老旧系统的改造和升级提供了新的解决方案。因此，基于机器视觉的指针式仪表识别技术不仅具有重要的理论价值，也对提升社会生产效率和安全性具有深远影响。";
-        System.out.println(s.length());
+
+    // 概率霍夫变换来检测直线（如刻度线和指针）
+    public Mat detectLines(Mat image) {
+        Mat grayImage = new Mat();
+        Imgproc.cvtColor(image, grayImage, Imgproc.COLOR_BGR2GRAY);
+        Imgproc.Canny(grayImage, grayImage, 50, 200, 3, false);
+
+        Mat lines = new Mat();
+        Imgproc.HoughLinesP(grayImage, lines, 1, Math.PI/180, 50, 30, 10);
+
+        // 在原图上绘制检测到的线
+        for (int x = 0; x < lines.rows(); x++) {
+            double[] l = lines.get(x, 0);
+            Imgproc.line(image, new Point(l[0], l[1]), new Point(l[2], l[3]), new Scalar(0,0,255), 3, Imgproc.LINE_AA, 0);
+        }
+
+        return image;
     }
+
+    // 其他图像处理方法...
 }
+
