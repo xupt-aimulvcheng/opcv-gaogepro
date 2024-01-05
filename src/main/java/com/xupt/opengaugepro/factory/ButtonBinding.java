@@ -1,6 +1,7 @@
 package com.xupt.opengaugepro.factory;
 
 import javafx.scene.control.Alert;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
@@ -37,7 +38,6 @@ public class ButtonBinding {
 
             // 调整图片大小到640x480
             Mat resizedImage = imageProcessingService.resizeImage(image, 640, 480);
-
             // 将Mat对象转换回Image对象以在JavaFX中显示
             Image fxImage = imageConverter.convertMatToJavaFXImage(resizedImage);
 
@@ -68,36 +68,38 @@ public class ButtonBinding {
         Mat image = imageProcessingService.loadImage(filePath);
 
         switch (processType) {
-            case "denoise":
-                image = imageProcessingService.denoise(image);
-                break;
-            case "adjustBrightness":
-                image = imageProcessingService.adjustBrightnessContrast(image, 1.2, 50);
-                break;
-            case "toGrayScale":
-                image = imageProcessingService.toGrayScale(image);
-                break;
-            case "extractDial":
-                image = imageProcessingService.detectDial(image);
-                break;
-            case "edgeEnhancement":
-                image = imageProcessingService.enhanceEdges(image);
-                break;
-            case "scaleHighlight":
-                image = imageProcessingService.highlightScales(image);
-                break;
-            case "digitEnhancement":
-                image = imageProcessingService.enhanceDigits(image);
-                break;
-            case "contrastAdjustment":
-                image = imageProcessingService.adjustContrast(image);
-                break;
-            case "enhance":
-                image = imageProcessingService.enhanceImage(image);
-                break;
-            default:
+            case "denoise" ->
+                // 使用高斯滤波进行去噪
+                    image = imageProcessingService.denoise(image, "gaussian");
+            case "adjustBrightness" ->
+                // 调整图像的亮度和对比度
+                    image = imageProcessingService.adjustBrightnessContrast(image, 1.2, 50);
+            case "toGrayScale" ->
+                // 将图像转换为灰度图
+                    image = imageProcessingService.toGrayScale(image);
+            case "extractDial" ->
+                // 检测并提取表盘区域
+                    image = imageProcessingService.detectDial(image);
+            case "edgeEnhancement" ->
+                // 对图像进行边缘强化处理
+                    image = imageProcessingService.enhanceEdges(image);
+            case "scaleHighlight" ->
+                // 突出显示表盘上的刻度
+                    image = imageProcessingService.highlightScales(image);
+            case "digitEnhancement" ->
+                // 增强表盘上的数字可读性
+                    image = imageProcessingService.enhanceDigits(image);
+            case "enhance" ->
+                // 对图像进行总体增强处理
+                    image = imageProcessingService.enhanceImage(image);
+            case "segment" ->
+                // 区域分割
+                    image = imageProcessingService.segmentDial(image);
+            default -> {
+                // 处理未知的处理类型
                 showAlert("错误", "未知的处理类型：" + processType);
                 return;
+            }
         }
 
         Image fxImage = imageConverter.convertMatToJavaFXImage(image);
@@ -132,7 +134,20 @@ public class ButtonBinding {
             lastZoomFactorProcessed *= scaleFactor;
         }
 
-        imageView.setFitWidth(imageView.getFitWidth() * scaleFactor);
-        imageView.setFitHeight(imageView.getFitHeight() * scaleFactor);
+        // 计算新的图像尺寸
+        double newWidth = imageView.getImage().getWidth() * lastZoomFactorOriginal;
+        double newHeight = imageView.getImage().getHeight() * lastZoomFactorOriginal;
+
+        imageView.setFitWidth(newWidth);
+        imageView.setFitHeight(newHeight);
+
+        // 如果ImageView被放置在ScrollPane中
+        ScrollPane scrollPane = isOriginal ? originalImageScrollPane : processedImageScrollPane;
+        if (scrollPane != null) {
+            // 如果图像放大到超出ScrollPane的尺寸，则需要设置为不保持比例
+            // 以允许用户通过滚动条查看图像的不同部分
+            imageView.setPreserveRatio(newWidth <= scrollPane.getWidth() && newHeight <= scrollPane.getHeight());
+        }
     }
+
 }

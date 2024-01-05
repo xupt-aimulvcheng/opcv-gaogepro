@@ -50,6 +50,17 @@
             <scope>system</scope>
             <systemPath>${project.basedir}/src/main/resources/lib/opencv-481.jar</systemPath>
         </dependency>
+<!--        slf4j-->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.32</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.32</version>
+        </dependency>
         <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>opencv</artifactId>
