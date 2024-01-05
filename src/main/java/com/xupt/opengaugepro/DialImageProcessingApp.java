@@ -47,10 +47,6 @@ public class DialImageProcessingApp extends Application {
         processedImageView.setPreserveRatio(true);
 
         Button[] buttons = buttonFactory.createButton(primaryStage);
-        for (Button btn : buttons) {
-            btn.setMinWidth(120);
-        }
-
         FlowPane controlPanel = new FlowPane(10, 10, buttons);
         controlPanel.setPadding(new javafx.geometry.Insets(10));
         controlPanel.setAlignment(Pos.CENTER);
@@ -60,7 +56,8 @@ public class DialImageProcessingApp extends Application {
 
         VBox statusBar = new VBox(statusLabel);
         statusBar.setPadding(new javafx.geometry.Insets(10));
-
+        Label originalImageLabel = new Label("原图");
+        Label processedImageLabel = new Label("处理图");
         GridPane imagePanel = new GridPane();
         ColumnConstraints column1 = new ColumnConstraints();
         column1.setPercentWidth(50);
@@ -78,20 +75,21 @@ public class DialImageProcessingApp extends Application {
             originalImageView.setFitWidth(panelWidth / 2);
             processedImageView.setFitWidth(panelWidth / 2);
         });
-
+        imagePanel.add(originalImageLabel, 0, 1);
+        imagePanel.add(processedImageLabel, 1, 1);
+        GridPane.setHalignment(originalImageLabel, HPos.CENTER);
+        GridPane.setHalignment(processedImageLabel, HPos.CENTER);
         BorderPane root = new BorderPane();
         root.setTop(controlPanel);
         root.setCenter(imagePanel);
         root.setBottom(statusBar);
 
         Scene scene = new Scene(root, 800, 450);
+        primaryStage.setHeight(673);
         primaryStage.setTitle("压力表盘图像信息处理系统");
         primaryStage.setScene(scene);
         primaryStage.show();
     }
-
-
-
 
     public static void main(String[] args) {
         launch(args);

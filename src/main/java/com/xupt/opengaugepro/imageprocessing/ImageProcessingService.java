@@ -6,21 +6,6 @@ import org.opencv.imgproc.Imgproc;
 
 public class ImageProcessingService {
 
-    // 放大图像
-    public Mat zoomIn(Mat image) {
-        Mat zoomedImage = new Mat();
-        Size size = new Size(image.width() * 2, image.height() * 2); // 放大尺寸
-        Imgproc.resize(image, zoomedImage, size);
-        return zoomedImage;
-    }
-
-    // 缩小图像
-    public Mat zoomOut(Mat image) {
-        Mat zoomedImage = new Mat();
-        Size size = new Size(image.width() * 0.8, image.height() * 0.8); // 缩小尺寸
-        Imgproc.resize(image, zoomedImage, size);
-        return zoomedImage;
-    }
 
     // 加载图像
     public Mat loadImage(String filePath) {
@@ -48,12 +33,6 @@ public class ImageProcessingService {
         return grayImage;
     }
 
-    // 提取表盘图像（示例）
-    public Mat extractDial(Mat image) {
-        // 在这里添加提取表盘的逻辑
-        // ...
-        return image;
-    }
 
     // 增强处理表盘图像
     public Mat enhanceImage(Mat image) {
@@ -61,6 +40,7 @@ public class ImageProcessingService {
         // ...
         return image;
     }
+    // 检测表盘。使用高斯模糊和霍夫圆变换来检测圆形（表盘），然后使用掩模提取圆形区域。
     public Mat detectDial(Mat image) {
         Mat grayImage = new Mat();
         Imgproc.cvtColor(image, grayImage, Imgproc.COLOR_BGR2GRAY);
@@ -69,22 +49,27 @@ public class ImageProcessingService {
         Mat circles = new Mat();
         Imgproc.HoughCircles(grayImage, circles, Imgproc.HOUGH_GRADIENT, 1, grayImage.rows() / 8, 100, 20, 0, 0);
 
-        Mat mask = Mat.zeros(image.size(), CvType.CV_8U);
+        // 创建一个与原图大小相同的白色背景图像
+        Mat whiteBackground = new Mat(image.size(), image.type(), new Scalar(255,255,255));
 
-        // 处理检测到的圆（此处只处理第一个检测到的圆）
+        // 如果检测到圆形，则将表盘区域复制到白色背景图像上
         if (circles.cols() > 0) {
             double[] c = circles.get(0, 0);
             Point center = new Point(Math.round(c[0]), Math.round(c[1]));
             int radius = (int) Math.round(c[2]);
 
-            // 创建一个只包含圆形区域的掩模
+            // 创建一个掩模，其中圆形区域是白色，其他区域是黑色
+            Mat mask = Mat.zeros(image.size(), CvType.CV_8U);
             Imgproc.circle(mask, center, radius, new Scalar(255,255,255), -1);
-        }
 
-        Mat dial = new Mat();
-        image.copyTo(dial, mask); // 使用掩模提取圆形区域
-        return dial;
+            // 将原图中的表盘区域复制到白色背景上
+            image.copyTo(whiteBackground, mask);
+        }
+        return resizeImage(whiteBackground,640,480);
     }
+
+
+
 
 
     // 概率霍夫变换来检测直线（如刻度线和指针）
@@ -103,6 +88,48 @@ public class ImageProcessingService {
         }
 
         return image;
+    }
+    // 边缘强化
+    public Mat enhanceEdges(Mat image) {
+        // 首先使用 detectDial 方法定位表盘
+        Mat dial = detectDial(image);
+
+        // 然后在表盘区域进行边缘强化
+        Mat edges = new Mat();
+        Imgproc.cvtColor(dial, edges, Imgproc.COLOR_BGR2GRAY);
+        Imgproc.GaussianBlur(edges, edges, new Size(3, 3), 0);
+        Imgproc.Canny(edges, edges, 50, 150, 3, false);
+
+        // 创建一个与原始图像同样大小的空白图像
+        Mat enhancedImage = Mat.zeros(image.size(), image.type());
+
+        // 将边缘强化后的表盘图像复制到空白图像的对应区域
+        dial.copyTo(enhancedImage, edges);
+
+        return enhancedImage;
+    }
+    // 刻度突出显示
+    public Mat highlightScales(Mat image) {
+
+        return image;
+    }
+    // 数字增强
+    public Mat enhanceDigits(Mat image) {
+
+        return image;
+    }
+    // 对比度调整
+    public Mat adjustContrast(Mat image) {
+
+        return image;
+    }
+
+    // 对图片进行宽高的设置
+    public Mat resizeImage(Mat image, int width, int height) {
+        Mat resizedImage = new Mat();
+        Size size = new Size(width, height);
+        Imgproc.resize(image, resizedImage, size);
+        return resizedImage;
     }
 
     // 其他图像处理方法...

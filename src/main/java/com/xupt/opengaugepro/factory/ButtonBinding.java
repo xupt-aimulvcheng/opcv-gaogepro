@@ -6,6 +6,7 @@ import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.opencv.core.Mat;
+import org.opencv.imgcodecs.Imgcodecs;
 
 import java.io.File;
 
@@ -31,15 +32,22 @@ public class ButtonBinding {
 
         File file = fileChooser.showOpenDialog(stage);
         if (file != null) {
-            Image image = new Image("file:" + file.getAbsolutePath());
+            // 将文件路径转换为Mat对象
+            Mat image = Imgcodecs.imread(file.getAbsolutePath());
+
+            // 调整图片大小到640x480
+            Mat resizedImage = imageProcessingService.resizeImage(image, 640, 480);
+
+            // 将Mat对象转换回Image对象以在JavaFX中显示
+            Image fxImage = imageConverter.convertMatToJavaFXImage(resizedImage);
+
             currentImageFile = file;
-            originalImageView.setImage(image);
+            originalImageView.setImage(fxImage);  // 注意这里使用的是fxImage
             processedImageView.setImage(null);
 
-            // 调整 ImageView 的大小以填充一半的窗口
-            double width = stage.getWidth() / 2;
-            originalImageView.setFitWidth(width);
-            processedImageView.setFitWidth(width);
+            // 不需要调整ImageView的大小，因为图片已经调整到了640x480
+            // originalImageView.setFitWidth(width);
+            // processedImageView.setFitWidth(width);
 
             // 更新状态
             status.setStatus("已上传");
@@ -60,31 +68,53 @@ public class ButtonBinding {
         Mat image = imageProcessingService.loadImage(filePath);
 
         switch (processType) {
-            case "denoise" -> image = imageProcessingService.denoise(image);
-            case "adjustBrightness" -> image = imageProcessingService.adjustBrightnessContrast(image, 1.2, 50);
-            case "toGrayScale" -> image = imageProcessingService.toGrayScale(image);
-            case "extractDial" -> image = imageProcessingService.detectDial(image); // 使用detectDial替代extractDial
-            case "enhance" -> image = imageProcessingService.enhanceImage(image);
-            default -> {
+            case "denoise":
+                image = imageProcessingService.denoise(image);
+                break;
+            case "adjustBrightness":
+                image = imageProcessingService.adjustBrightnessContrast(image, 1.2, 50);
+                break;
+            case "toGrayScale":
+                image = imageProcessingService.toGrayScale(image);
+                break;
+            case "extractDial":
+                image = imageProcessingService.detectDial(image);
+                break;
+            case "edgeEnhancement":
+                image = imageProcessingService.enhanceEdges(image);
+                break;
+            case "scaleHighlight":
+                image = imageProcessingService.highlightScales(image);
+                break;
+            case "digitEnhancement":
+                image = imageProcessingService.enhanceDigits(image);
+                break;
+            case "contrastAdjustment":
+                image = imageProcessingService.adjustContrast(image);
+                break;
+            case "enhance":
+                image = imageProcessingService.enhanceImage(image);
+                break;
+            default:
                 showAlert("错误", "未知的处理类型：" + processType);
                 return;
-            }
         }
-
-        processedImage = image;
 
         Image fxImage = imageConverter.convertMatToJavaFXImage(image);
         processedImageView.setImage(fxImage);
         status.setStatus("已完成");
         statusLabel.setText(status.getStatus());
-        // 处理图像后重设放大缩小的比例
+
+        // 重设图像缩放
         processedImageView.setFitWidth(originalImageView.getFitWidth());
         processedImageView.setFitHeight(originalImageView.getFitHeight());
-        lastZoomFactorProcessed = lastZoomFactorOriginal; // 使用原图的放大比例
+        lastZoomFactorProcessed = lastZoomFactorOriginal;
     }
 
 
-    private void showAlert(String title, String message) {
+
+
+    public void showAlert(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(title);
         alert.setHeaderText(null);
