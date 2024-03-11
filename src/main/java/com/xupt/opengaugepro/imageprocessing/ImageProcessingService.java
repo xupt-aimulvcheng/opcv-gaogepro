@@ -90,17 +90,16 @@ public class ImageProcessingService {
     }
 
 
-
-
     // 检测表盘。使用高斯模糊和霍夫圆变换来检测圆形（表盘），然后使用掩模提取圆形区域。
     public Mat detectDial(Mat image) {
         // 对比度限制直方图均衡化（CLAHE）
+        // 初始化灰度图像
         Mat grayImage = new Mat();
         Imgproc.cvtColor(image, grayImage, Imgproc.COLOR_BGR2GRAY);
         CLAHE clahe = Imgproc.createCLAHE();
-        clahe.apply(grayImage, grayImage);
+        clahe.apply(grayImage, grayImage); // 现在grayImage是适用于CLAHE的灰度图
 
-        // 降低分辨率
+        // 降低分辨率并应用高斯模糊
         Mat resizedImage = new Mat();
         Imgproc.resize(grayImage, resizedImage, new Size(), 0.5, 0.5, Imgproc.INTER_LINEAR);
         Imgproc.GaussianBlur(resizedImage, resizedImage, new Size(9, 9), 2, 2);
@@ -125,6 +124,7 @@ public class ImageProcessingService {
 
         return resizeImage(whiteBackground, 640, 480);
     }
+
     // 区域分割
     public Mat segmentDial(Mat image) {
         try {
@@ -163,10 +163,18 @@ public class ImageProcessingService {
     public Mat enhanceEdges(Mat image) {
         // 首先使用 detectDial 方法定位表盘
         Mat dial = detectDial(image);
+        if (dial == null || dial.empty()) {
+            logger.error("detectDial返回了空图像");
+            return null; // 或者适当处理
+        }
 
         // 然后在表盘区域进行边缘强化
         Mat edges = new Mat();
-        Imgproc.cvtColor(dial, edges, Imgproc.COLOR_BGR2GRAY);
+        if (dial.channels() > 1) {
+            Imgproc.cvtColor(dial, edges, Imgproc.COLOR_BGR2GRAY);
+        } else {
+            edges = dial.clone(); // 如果已经是灰度图，直接使用
+        }
         Imgproc.GaussianBlur(edges, edges, new Size(3, 3), 0);
         Imgproc.Canny(edges, edges, 50, 150, 3, false);
 
@@ -192,34 +200,40 @@ public class ImageProcessingService {
 
         return image;
     }
-    // 数字增强
+    /**
+     * 增强图像中的数字识别度。
+     * @param image 输入的原始BGR图像。
+     * @return 处理后的图像，增强了数字的可读性。
+     */
     public Mat enhanceDigits(Mat image) {
         try {
-            // 数字检测
+            // 检测图像中的数字。
             Mat digits = detectDigits(image);
+            // 检测图像中的指针。
             Mat pointers = detectPointers(image);
+            // 检测图像中的圆心。
             Mat circleCenter = detectCircleCenter(image);
 
-            // 创建掩模
+            // 创建一个掩模，用于合并数字、指针和圆心的检测结果。
             Mat mask = Mat.zeros(image.size(), CvType.CV_8UC1);
             Core.bitwise_or(digits, mask, mask);
             Core.bitwise_or(pointers, mask, mask);
             Core.bitwise_or(circleCenter, mask, mask);
 
-            // 转换原图为灰度图
+            // 将原图转换为灰度图，以便进行后续处理。
             Mat grayImage = new Mat();
             Imgproc.cvtColor(image, grayImage, Imgproc.COLOR_BGR2GRAY);
 
-            // 应用掩模
+            // 使用创建的掩模应用于灰度图像，只保留掩模区域的像素。
             Mat result = new Mat();
             grayImage.copyTo(result, mask);
 
-            // 应用CLAHE
+            // 应用CLAHE (对比度限制的自适应直方图均衡化) 来提高图像的局部对比度。
             CLAHE clahe = Imgproc.createCLAHE();
             clahe.setClipLimit(4);
             clahe.apply(result, result);
 
-            // 应用锐化
+            // 使用自定义核进行锐化处理，以进一步提高数字的清晰度。
             Mat kernel = new Mat(3, 3, CvType.CV_32F, new Scalar(0));
             kernel.put(1, 1, 5);
             kernel.put(0, 1, -1);
@@ -228,12 +242,13 @@ public class ImageProcessingService {
             kernel.put(2, 1, -1);
             Imgproc.filter2D(result, result, -1, kernel);
 
-            // 边缘强化
+            // 对结果图像进行边缘强化处理，使数字轮廓更加清晰。
             result = enhanceEdges(result);
 
             return result;
         } catch (Exception e) {
-            System.err.println("Error enhancing digits: " + e.getMessage());
+            // 打印错误信息并返回null，表示处理失败。
+            logger.error("Error enhancing digits: {}", e.getMessage());
             return null;
         }
     }
@@ -307,14 +322,6 @@ public class ImageProcessingService {
 
         return digits;
     }
-
-
-
-
-
-
-
-
 
     // 其他图像处理方法...
 }
