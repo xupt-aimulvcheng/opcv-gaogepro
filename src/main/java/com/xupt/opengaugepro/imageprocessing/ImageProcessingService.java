@@ -397,7 +397,7 @@ public class ImageProcessingService {
         Mat blurredImage = new Mat();
         GaussianBlur(claheResult, blurredImage, new Size(5, 5), 0);
 
-        // 创建并应用锐化核，以增强图像中的细节
+        // 创建并锐化图像，以增强图像中的细节
         Mat sharpenKernel = new Mat(3, 3, CvType.CV_32F, new Scalar(0));
         sharpenKernel.put(1, 1, sharpenStrength);
         float[] surround = {-1, -1, -1, -1, 9, -1, -1, -1, -1}; // 旁边点的负值强化核心点
@@ -414,7 +414,7 @@ public class ImageProcessingService {
         // 使用阈值化方法将图像转换为二值图像。
         // 0: 阈值 - 该参数设置为0，表示使用OTSU方法自动计算最佳阈值。
         // 255: 最大值 - 当像素值超过（或等于）阈值时应赋予的新值。
-        // thresholdType: 阈值类型 - 这里使用的是外部变量，可以是OTSU算法，或是简单的二值化等。
+        // thresholdType: 阈值类型
         threshold(sharpenedImage, sharpenedImage, 0, 255, thresholdType);
 
 

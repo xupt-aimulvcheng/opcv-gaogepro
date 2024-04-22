@@ -103,10 +103,10 @@ public class DialImageProcessingApp extends Application {
          // 创建参数输入框并添加到界面
          initializeComboBox();
          createParameterInputs(root);
-
+         updateParameters();
 
          // 创建场景并设置舞台
-         Scene scene = new Scene(root, 1500, 900);
+         Scene scene = new Scene(root, 1500, 700);
          primaryStage.setTitle("压力表盘图像信息处理系统");
          primaryStage.setScene(scene);
          primaryStage.show();
@@ -134,14 +134,14 @@ public class DialImageProcessingApp extends Application {
                 denoiseComboBox,
                 new Label("CLAHE 对比度限制:"),
                 claheClipLimitField,
-                new Label("CLAHE 网格尺寸:"),
-                claheTileGridSizeField,
-                new Label("锐化强度:"),
-                sharpenStrengthField,
+                // new Label("CLAHE 网格尺寸:"),
+                // claheTileGridSizeField,
+                // new Label("锐化强度:"),
+                // sharpenStrengthField,
                 new Label("二值化类型:"),
                 thresholdTypeComboBox,
-                new Label("形态学尺寸:"),
-                morphologySizeField,
+                // new Label("形态学尺寸:"),
+                // morphologySizeField,
                 updateParametersButton
         );
 
@@ -212,7 +212,7 @@ public class DialImageProcessingApp extends Application {
                     return "gaussian";
             }
     }
-
+    // 选取二值化
     private int getThresholdType(String value) {
         return switch (value) {
             case "THRESH_BINARY (二值化)" -> THRESH_BINARY;
@@ -229,7 +229,7 @@ public class DialImageProcessingApp extends Application {
 
 
 
-
+    // 设置图像面板
     private GridPane setupImagePanel() {
         GridPane imagePanel = new GridPane();
         ColumnConstraints column1 = new ColumnConstraints();
@@ -250,7 +250,7 @@ public class DialImageProcessingApp extends Application {
 
         return imagePanel;
     }
-
+    // 设置图像滚动面板
     private void bindImageViewSizeToScrollPane(ImageView imageView, ScrollPane scrollPane) {
         imageView.fitWidthProperty().bind(scrollPane.widthProperty());
     }
