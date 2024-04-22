@@ -4,21 +4,20 @@ import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
-import javafx.concurrent.Task;
-import javafx.application.Platform;
-import javafx.scene.control.Alert;
-import org.controlsfx.dialog.ProgressDialog;
-
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import org.controlsfx.dialog.ProgressDialog;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 
 import static com.xupt.opengaugepro.DialImageProcessingApp.*;
+import static com.xupt.opengaugepro.entity.Params.*;
 
 //按钮绑定的行为
 public class ButtonBinding {
@@ -27,12 +26,14 @@ public class ButtonBinding {
     private Label statusLabel;
     private double lastZoomFactorOriginal = 1.0;
     private double lastZoomFactorProcessed = 1.0;
+    private Logger logger = LoggerFactory.getLogger(ButtonBinding.class);
 
     public ButtonBinding(ImageView originalImageView, ImageView processedImageView, Label statusLabel) {
         this.originalImageView = originalImageView;
         this.processedImageView = processedImageView;
         this.statusLabel = statusLabel;
     }
+    //上传图片
     public void uploadImage(Stage stage) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("选择图像文件");
@@ -57,7 +58,7 @@ public class ButtonBinding {
             Image fxImage = imageConverter.convertMatToJavaFXImage(resizedImage);
 
             currentImageFile = file;
-            originalImageView.setImage(fxImage);  // 注意这里使用的是fxImage
+            originalImageView.setImage(fxImage);
             processedImageView.setImage(null);
 
             // 不需要调整ImageView的大小，因为图片已经调整到了640x480
@@ -72,12 +73,18 @@ public class ButtonBinding {
         }
     }
 
+    /**
+     * 处理图像
+     * @param processType 处理图像的类型（例如，去噪、亮度调整等）。
+     * @param stage 主应用程序的舞台，可能用于显示进度信息或其他对话框。
+     */
     public void processImage(String processType, Stage stage) {
         if (currentImageFile == null) {
             showAlert("提示", "请先上传一张图像。");
             return;
         }
 
+        status.setStatus("处理中");
         Task<Void> task = new Task<>() {
             @Override
             protected Void call() throws Exception {
@@ -87,12 +94,11 @@ public class ButtonBinding {
                 updateMessage("正在处理图像...");
                 // 这里模拟图像处理过程
                 Thread.sleep(1000); // 假设耗时操作
-
                 // 根据处理类型调用不同的图像处理方法
                 switch (processType) {
                     case "denoise" ->
                         // 使用高斯滤波进行去噪
-                            image = imageProcessingService.denoise(image, "gaussian");
+                            image = imageProcessingService.denoise(image);
                     case "adjustBrightness" ->
                         // 调整图像的亮度和对比度
                             image = imageProcessingService.adjustBrightnessContrast(image, 1.2, 50);
@@ -110,7 +116,7 @@ public class ButtonBinding {
                             image = imageProcessingService.highlightScales(image);
                     case "digitEnhancement" ->
                         // 增强表盘上的数字可读性
-                            image = imageProcessingService.enhanceDigits(image);
+                            image = imageProcessingService.enhanceDigits(image, claheClipLimit, claheTileGridSize, sharpenStrength, thresholdType, morphologySize);
                     case "enhance" ->
                         // 对图像进行总体增强处理
                             image = imageProcessingService.enhanceImage(image);
@@ -140,12 +146,17 @@ public class ButtonBinding {
         task.setOnFailed(e -> {
             Throwable problem = task.getException();
             showAlert("错误", "处理图像时发生错误: " + problem.getMessage());
+            logger.error("处理图像时发生错误: {}", problem.getMessage());
         });
 
         showProgressDialog(stage, task);
     }
 
-
+    /**
+     * 显示进度对话框
+     * @param stage 主应用程序的舞台，用于关联进度对话框。
+     * @param task 执行的后台任务，其进度信息将显示在进度对话框中。
+     */
     private void showProgressDialog(Stage stage, Task<?> task) {
         // 创建一个进度条对话框
         ProgressDialog progressDialog = new ProgressDialog(task);
@@ -158,7 +169,11 @@ public class ButtonBinding {
     }
 
 
-
+    /**
+     * 显示消息对话框
+     * @param title 对话框的标题。
+     * @param message 显示在对话框中的消息内容。
+     */
     public void showAlert(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(title);
@@ -167,7 +182,11 @@ public class ButtonBinding {
         alert.showAndWait();
     }
 
-
+    /**
+     * 放大或缩小图像
+     * @param zoomIn 如果为true，则放大图像；如果为false，则缩小图像。
+     * @param isOriginal  如果为true，则对原始图像进行缩放；如果为false，则对处理过的图像进行缩放。
+     */
     public void zoomImage(boolean zoomIn, boolean isOriginal) {
         if (currentImageFile == null) {
             showAlert("原图像不存在", "请先上传一张图像，然后再尝试放大或缩小。");
@@ -182,7 +201,7 @@ public class ButtonBinding {
             return;
         }
 
-        double scaleFactor = zoomIn ? 1.2 : 0.8; // 放大或缩小20%
+        double scaleFactor = zoomIn ? Magnification : Minification; // 放大或缩小20%
 
         // 更新放大缩小比例
         double newZoomFactor = isOriginal ? lastZoomFactorOriginal * scaleFactor : lastZoomFactorProcessed * scaleFactor;

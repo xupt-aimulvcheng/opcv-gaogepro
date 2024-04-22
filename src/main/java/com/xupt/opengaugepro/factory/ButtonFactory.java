@@ -16,6 +16,11 @@ public class ButtonFactory {
         this.stage = stage;
     }
 
+    /**
+     * 创建按钮
+     * @param primaryStage 主舞台
+     * @return 按钮数组
+     */
     public Button[] createButton(Stage primaryStage) {
         // 创建按钮数组
         Button[] buttons = {
@@ -26,7 +31,6 @@ public class ButtonFactory {
                 createButton("区域分割",event -> buttonBinding.processImage("segment",stage)),
                 createButton("提取表盘图像", event -> buttonBinding.processImage("extractDial",stage)),
                 createButton("边缘强化", event -> buttonBinding.processImage("edgeEnhancement",stage)),
-                createButton("刻度突出显示", event -> buttonBinding.processImage("scaleHighlight",stage)),
                 createButton("数字增强", event -> buttonBinding.processImage("digitEnhancement",stage)),
                 createButton("放大原图", event -> buttonBinding.zoomImage(true, true)),
                 createButton("缩小原图", event -> buttonBinding.zoomImage(false, true)),
@@ -39,6 +43,12 @@ public class ButtonFactory {
         return buttons;
     }
 
+    /**
+     * 创建一个按钮
+     * @param text 按钮文本
+     * @param action 按钮点击事件
+     * @return 按钮
+     */
     private Button createButton(String text, EventHandler<ActionEvent> action) {
         Button button = new Button(text);
         button.setOnAction(event -> {
@@ -53,10 +63,21 @@ public class ButtonFactory {
         return button;
     }
 
+    /**
+     * 应用通用样式到一组按钮
+     * @param buttons 按钮数组
+     */
     private void applyCommonStyle(Button[] buttons) {
         for (Button button : buttons) {
+            // 设置最小宽度
             button.setMinWidth(120);
-            // 在此处添加更多样式设置，例如按钮颜色、字体等
+            // 设置按钮的背景色、文字颜色、字体大小和内边距
+            button.setStyle("-fx-background-color: #4A90E2; -fx-text-fill: white; -fx-font-size: 14px; -fx-padding: 10px;");
+
+            // 添加鼠标悬停效果
+            button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: #357ABD; -fx-text-fill: white; -fx-font-size: 14px; -fx-padding: 10px;"));
+            button.setOnMouseExited(e -> button.setStyle("-fx-background-color: #4A90E2; -fx-text-fill: white; -fx-font-size: 14px; -fx-padding: 10px;"));
         }
     }
+
 }
