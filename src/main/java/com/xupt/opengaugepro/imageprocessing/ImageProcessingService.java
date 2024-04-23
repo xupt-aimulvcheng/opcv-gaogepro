@@ -35,7 +35,14 @@ public class ImageProcessingService {
 
         return resizeImage(denoisedImage,640,480);
     }
-    // 调整亮度和对比度
+
+    /**
+     * 调整亮度和对比度
+     * @param image 输入图像
+     * @param alpha 亮度调整系数
+     * @param beta  对比度调整系数
+     * @return  调整后的图像
+     */
     public Mat adjustBrightnessContrast(Mat image, double alpha, double beta) {
         Mat newImage = new Mat();
         image.convertTo(newImage, -1, alpha, beta);
