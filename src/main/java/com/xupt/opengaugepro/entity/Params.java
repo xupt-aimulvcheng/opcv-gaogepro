@@ -14,4 +14,6 @@ public class Params {
     public static double Magnification = 1.2;  // 放大倍数
     public static double Minification = 0.8;  // 缩小倍数
     public static String doniseType = "gaussian"; // 去噪算法
+    public static double alphaValue = 1.2;  //亮度调整系数
+    public static double betaValue = 50; // 对比度调整系数
 }

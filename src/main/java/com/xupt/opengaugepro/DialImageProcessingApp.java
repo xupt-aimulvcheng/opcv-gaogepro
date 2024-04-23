@@ -46,6 +46,8 @@ public class DialImageProcessingApp extends Application {
     private TextField morphologySizeField; // 用于形态学尺寸的输入框
     private ComboBox<String> thresholdTypeComboBox; // 用于选择阈值类型的下拉框
     private ComboBox<String> denoiseComboBox; // 用于选择去噪类型的下拉框
+    private TextField alphaField;
+    private TextField betaField;
 
      @Override
      public void start(Stage primaryStage) {
@@ -120,6 +122,8 @@ public class DialImageProcessingApp extends Application {
         morphologySizeField = new TextField(String.valueOf(morphologySize));
         magnificationField = new TextField(String.valueOf(Magnification));
         minificationField = new TextField(String.valueOf(Minification));
+        alphaField = new TextField(String.valueOf(alphaValue));
+        betaField = new TextField(String.valueOf(betaValue));
         // 创建更新参数的按钮
         Button updateParametersButton = new Button("更新参数");
         updateParametersButton.setOnAction(event -> updateParameters());
@@ -134,6 +138,10 @@ public class DialImageProcessingApp extends Application {
                 denoiseComboBox,
                 new Label("CLAHE 对比度限制:"),
                 claheClipLimitField,
+                new Label("亮度调整系数:"),
+                alphaField,
+                new Label("对比度调整系数:"),
+                betaField,
                 // new Label("CLAHE 网格尺寸:"),
                 // claheTileGridSizeField,
                 // new Label("锐化强度:"),
@@ -186,6 +194,8 @@ public class DialImageProcessingApp extends Application {
             gridSize = Double.parseDouble(claheTileGridSizeField.getText());
             claheTileGridSize = new Size(gridSize, gridSize);
             sharpenStrength = Float.parseFloat(sharpenStrengthField.getText());
+            alphaValue = Double.parseDouble(alphaField.getText());
+            betaValue = Double.parseDouble(betaField.getText());
         } catch (NumberFormatException e) {
             buttonBinding.showAlert("错误","请输入小数");
         }

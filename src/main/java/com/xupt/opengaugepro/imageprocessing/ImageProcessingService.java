@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.xupt.opengaugepro.entity.Params.doniseType;
+import static com.xupt.opengaugepro.entity.Params.*;
 import static org.opencv.core.CvType.CV_32FC1;
 import static org.opencv.imgproc.Imgproc.*;
 
@@ -227,7 +227,7 @@ public class ImageProcessingService {
         Imgproc.resize(enhancedImage, resizedImage, newSize);
 
         // 调整图像的亮度和对比度
-        return adjustBrightnessContrast(resizedImage, 1.2, 50);
+        return adjustBrightnessContrast(resizedImage, alphaValue, betaValue);
     }
 
 

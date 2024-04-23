@@ -101,7 +101,7 @@ public class ButtonBinding {
                             image = imageProcessingService.denoise(image);
                     case "adjustBrightness" ->
                         // 调整图像的亮度和对比度
-                            image = imageProcessingService.adjustBrightnessContrast(image, 1.2, 50);
+                            image = imageProcessingService.adjustBrightnessContrast(image, alphaValue, betaValue);
                     case "toGrayScale" ->
                         // 将图像转换为灰度图
                             image = imageProcessingService.toGrayScale(image);
