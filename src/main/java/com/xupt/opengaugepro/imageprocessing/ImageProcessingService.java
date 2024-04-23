@@ -27,7 +27,7 @@ public class ImageProcessingService {
 
         switch (doniseType) {
             // 使用不同的去噪方法
-            case "gaussian" -> GaussianBlur(image, denoisedImage, new Size(5, 5), 0); // 高斯模糊
+            case "gaussian" -> Imgproc.GaussianBlur(image, denoisedImage, new Size(5, 5), 0); // 高斯模糊
             case "median" -> Imgproc.medianBlur(image, denoisedImage, 5); // 中值滤波
             case "bilateral" -> Imgproc.bilateralFilter(image, denoisedImage, 9, 75, 75); // 双边滤波
             default -> image.copyTo(denoisedImage); // 默认不做处理
