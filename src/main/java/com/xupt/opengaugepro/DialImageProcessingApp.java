@@ -199,8 +199,8 @@ public class DialImageProcessingApp extends Application {
         } catch (NumberFormatException e) {
             buttonBinding.showAlert("错误","请输入小数");
         }
-        thresholdType = getThresholdType(thresholdTypeComboBox.getValue()); // 添加一个方法转换字符串为相应的阈值
-        doniseType = getDoniseType(denoiseComboBox.getValue()); // 添加一个方法转换字符串为相应的去噪类型
+        thresholdType = getThresholdType(thresholdTypeComboBox.getValue()); // 一个方法转换字符串为相应的阈值
+        doniseType = getDoniseType(denoiseComboBox.getValue()); // 一个方法转换字符串为相应的去噪类型
         try {
             morphologySize = Integer.parseInt(morphologySizeField.getText());
         } catch (NumberFormatException e) {

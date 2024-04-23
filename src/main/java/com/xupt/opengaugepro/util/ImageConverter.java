@@ -28,7 +28,7 @@ public class ImageConverter {
             bufferedImage = ImageIO.read(new ByteArrayInputStream(byteArray));
             return SwingFXUtils.toFXImage(bufferedImage, null);
         } catch (Exception e) {
-            logger.error("Error converting Mat to JavaFX Image: {}", e.getMessage());
+            logger.error("Mat转换错误JavaFX Image: {}", e.getMessage());
             return null;
         }
     }
