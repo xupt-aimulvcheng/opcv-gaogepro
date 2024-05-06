@@ -9,6 +9,7 @@ import javafx.application.Application;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
@@ -18,6 +19,10 @@ import org.opencv.core.Core;
 import org.opencv.core.Size;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.xupt.opengaugepro.entity.Params.*;
 import static org.opencv.imgproc.Imgproc.*;
@@ -48,73 +53,93 @@ public class DialImageProcessingApp extends Application {
     private ComboBox<String> denoiseComboBox; // 用于选择去噪类型的下拉框
     private TextField alphaField;
     private TextField betaField;
+    private VBox parametersBox;
+    private Button updateParametersButton;
+    private Map<String, Control> controlMap;
+    public BorderPane root;
+    private List<String> operationConditions;
+    @Override
+    public void start(Stage primaryStage) {
+        imageProcessingService = new ImageProcessingService();
+        imageConverter = new ImageConverter();
 
-     @Override
-     public void start(Stage primaryStage) {
-         imageProcessingService = new ImageProcessingService();
-         imageConverter = new ImageConverter();
+        // 初始化ImageView并设置保持图片宽高比
+        originalImageView = new ImageView();
+        processedImageView = new ImageView();
+        originalImageView.setPreserveRatio(true);
+        processedImageView.setPreserveRatio(true);
 
-         // 初始化ImageView并设置保持图片宽高比
-         originalImageView = new ImageView();
-         processedImageView = new ImageView();
-         originalImageView.setPreserveRatio(true);
-         processedImageView.setPreserveRatio(true);
+        // 初始化状态标签
+        statusLabel = new Label("状态: 未开始");
 
-         // 初始化状态标签
-         statusLabel = new Label("状态: 未开始");
+        // 创建ButtonBinding实例，传入必要的参数
+        buttonBinding = new ButtonBinding(originalImageView, processedImageView, statusLabel,this);
 
-         // 创建ButtonBinding实例，传入必要的参数
-         ButtonBinding buttonBinding = new ButtonBinding(originalImageView, processedImageView, statusLabel);
+        // 假设ButtonFactory已经修改为接受ButtonBinding实例
+        ButtonFactory buttonFactory = new ButtonFactory(buttonBinding, primaryStage,this);
+        Node[] buttons = buttonFactory.createMenuButtons(primaryStage);
 
-         // 假设ButtonFactory已经修改为接受ButtonBinding实例
-         ButtonFactory buttonFactory = new ButtonFactory(buttonBinding, primaryStage);
-         Button[] buttons = buttonFactory.createButton(primaryStage);
+        VBox buttonPanel = new VBox(10, buttons);
+        setupButtonPanel(buttonPanel);  // 调用设置按钮面板的方法
 
-         // 设置控制面板
-         FlowPane controlPanel = new FlowPane(10, 10, buttons);
-         controlPanel.setPadding(new Insets(10));
-         controlPanel.setAlignment(Pos.CENTER);
+        // 创建包含ImageView的ScrollPane
+        originalImageScrollPane = new ScrollPane(originalImageView);
+        processedImageScrollPane = new ScrollPane(processedImageView);
 
-         // 设置状态栏
-         VBox statusBar = new VBox(statusLabel);
-         statusBar.setPadding(new Insets(10));
 
-         // 创建包含ImageView的ScrollPane
-         originalImageScrollPane = new ScrollPane(originalImageView);
-         processedImageScrollPane = new ScrollPane(processedImageView);
+        // 设置ScrollPane政策
+        originalImageScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        originalImageScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        processedImageScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        processedImageScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
-         // 设置ScrollPane政策
-         originalImageScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-         originalImageScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-         processedImageScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-         processedImageScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        // 动态调整ImageView大小以适应ScrollPane
+        bindImageViewSizeToScrollPane(originalImageView, originalImageScrollPane);
+        bindImageViewSizeToScrollPane(processedImageView, processedImageScrollPane);
 
-         // 动态调整ImageView大小以适应ScrollPane
-         bindImageViewSizeToScrollPane(originalImageView, originalImageScrollPane);
-         bindImageViewSizeToScrollPane(processedImageView, processedImageScrollPane);
+        // 设置图像面板
+        GridPane imagePanel = setupImagePanel();
 
-         // 设置图像面板
-         GridPane imagePanel = setupImagePanel();
+        // 设置根面板
+        root = new BorderPane();
+        root.setLeft(buttonPanel);
+        root.setCenter(imagePanel);
+        // 创建参数输入框并添加到界面
+        initializeComboBox();
+        createParameterInputs(root,""); // 调整参数输入区，添加至界面右侧
+        root.setBottom(new VBox(statusLabel));
+        // 设置舞台
+        primaryStage.setMaximized(true);
+        Scene scene = new Scene(root);
+        scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
+        scene.getStylesheets().add("org/kordamp/bootstrapfx/bootstrapfx.css");
+        // hiddenInput();
+        primaryStage.setTitle("压力表盘图像信息处理系统");
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
 
-         // 构建根面板
-         BorderPane root = new BorderPane();
-         root.setTop(controlPanel);
-         root.setCenter(imagePanel);
-         root.setBottom(statusBar);
+    private void initializeControlMap(String str) {
+        controlMap = new HashMap<>();
+        // 使用参数名称作为键，控件对象作为值填充映射
+        if (str.startsWith("放大")) controlMap.put("放大倍数", magnificationField);
+        if (str.startsWith("缩小")) controlMap.put("缩小倍数", minificationField);
+        if (str.equals("去噪")) controlMap.put("模糊类型", denoiseComboBox);
+        if ("调整亮度/对比度".equals(str)) {
+            controlMap.put("亮度调整系数", alphaField);
+            controlMap.put("对比度调整系数", betaField);
+        }
+        if ("数字增强".equals(str)) {
+            controlMap.put("CLAHE 对比度限制", claheClipLimitField);
+            controlMap.put("CLAHE 网格尺寸", claheTileGridSizeField);
+            controlMap.put("锐化强度", sharpenStrengthField);
+            controlMap.put("二值化类型", thresholdTypeComboBox);
+            controlMap.put("形态学尺寸", morphologySizeField);
+        }
+    }
 
-         // 创建参数输入框并添加到界面
-         initializeComboBox();
-         createParameterInputs(root);
-         updateParameters();
-
-         // 创建场景并设置舞台
-         Scene scene = new Scene(root, 1500, 700);
-         primaryStage.setTitle("压力表盘图像信息处理系统");
-         primaryStage.setScene(scene);
-         primaryStage.show();
-     }
     // 创建参数输入框和按钮
-    private void createParameterInputs(BorderPane root) {
+    public void createParameterInputs(BorderPane root, String str) {
         // 创建参数输入框并设置默认值
         claheClipLimitField = new TextField(String.valueOf(claheClipLimit));
         claheTileGridSizeField = new TextField(String.valueOf(claheTileGridSize.width));
@@ -124,38 +149,52 @@ public class DialImageProcessingApp extends Application {
         minificationField = new TextField(String.valueOf(Minification));
         alphaField = new TextField(String.valueOf(alphaValue));
         betaField = new TextField(String.valueOf(betaValue));
-        // 创建更新参数的按钮
-        Button updateParametersButton = new Button("更新参数");
-        updateParametersButton.setOnAction(event -> updateParameters());
-
-        // 创建参数输入布局容器
-        VBox parametersBox = new VBox(
-                new Label("放大倍数:"),
-                magnificationField,
-                new Label("缩小倍数:"),
-                minificationField,
-                new Label("模糊类型"),
-                denoiseComboBox,
-                new Label("CLAHE 对比度限制:"),
-                claheClipLimitField,
-                new Label("亮度调整系数:"),
-                alphaField,
-                new Label("对比度调整系数:"),
-                betaField,
-                // new Label("CLAHE 网格尺寸:"),
-                // claheTileGridSizeField,
-                // new Label("锐化强度:"),
-                // sharpenStrengthField,
-                new Label("二值化类型:"),
-                thresholdTypeComboBox,
-                // new Label("形态学尺寸:"),
-                // morphologySizeField,
-                updateParametersButton
-        );
+        // 初始化 parametersBox
+        parametersBox = new VBox();
+        operationConditions = new ArrayList<>();
+        operationConditions.add("放大倍数");
+        operationConditions.add("缩小倍数");
+        operationConditions.add("去噪");
+        operationConditions.add("调整亮度/对比度");
+        operationConditions.add("数字增强");
+        controlMap = new HashMap<>();
+        initializeControlMap(str);
 
         parametersBox.setPadding(new Insets(10));
         parametersBox.setSpacing(10);
+        parametersBox.setAlignment(Pos.TOP_CENTER);
 
+        // 创建参数输入布局容器
+        // 遍历映射并为每个条目创建一个输入控件和标签
+        for (Map.Entry<String, Control> entry : controlMap.entrySet()) {
+            String key = entry.getKey();
+            Control control = entry.getValue();
+
+            // 为每个控件创建一个标签
+            Label label = new Label(key);
+
+            // 创建一个容器来包含标签和控件
+            VBox container = new VBox(); // 你可以选择使用 HBox 如果你想让它们在同一行
+            container.getChildren().add(label);
+            container.getChildren().add(control);
+
+            // 根据控件类型进行特定的初始化（如果需要的话）
+            if (control instanceof TextField) {
+                // 对 TextField 进行特定配置
+            } else if (control instanceof ComboBox) {
+                // 对 ComboBox 进行特定配置
+            }
+
+            // 将容器添加到 VBox 中
+            parametersBox.getChildren().add(container);
+        }
+        // 创建更新参数的按钮
+        if (operationConditions.contains(str)) {
+            updateParametersButton = new Button("更新参数");
+            updateParametersButton.setOnAction(event -> updateParameters());
+            // 添加更新参数的按钮到 parametersBox
+            parametersBox.getChildren().add(updateParametersButton);
+        }
         // 将参数输入布局容器添加到界面的右侧
         root.setRight(parametersBox);
     }
@@ -185,7 +224,7 @@ public class DialImageProcessingApp extends Application {
 
 
 
-    private void updateParameters() {
+    public void updateParameters() {
         double gridSize = 0;
         try {
             Magnification = Double.parseDouble(magnificationField.getText());
@@ -202,25 +241,25 @@ public class DialImageProcessingApp extends Application {
         thresholdType = getThresholdType(thresholdTypeComboBox.getValue()); // 一个方法转换字符串为相应的阈值
         doniseType = getDoniseType(denoiseComboBox.getValue()); // 一个方法转换字符串为相应的去噪类型
         try {
-            morphologySize = Integer.parseInt(morphologySizeField.getText());
+            morphologySize = Double.parseDouble(morphologySizeField.getText());
         } catch (NumberFormatException e) {
-            buttonBinding.showAlert("错误","请输入一个整数");
+            buttonBinding.showAlert("错误","形态学尺寸请输入一个数字");
         }
 
     }
 
     private String getDoniseType(String value) {
         switch (value)
-            {
-                case "高斯去噪":
-                    return "gaussian";
-                case "中值去噪":
-                    return "median";
-                case "双边滤波":
-                    return "bilateral";
-                default:
-                    return "gaussian";
-            }
+        {
+            case "高斯去噪":
+                return "gaussian";
+            case "中值去噪":
+                return "median";
+            case "双边滤波":
+                return "bilateral";
+            default:
+                return "gaussian";
+        }
     }
     // 选取二值化
     private int getThresholdType(String value) {
@@ -264,6 +303,35 @@ public class DialImageProcessingApp extends Application {
     private void bindImageViewSizeToScrollPane(ImageView imageView, ScrollPane scrollPane) {
         imageView.fitWidthProperty().bind(scrollPane.widthProperty());
     }
+    private void setupButtonPanel(VBox buttonPanel) {
+        // 设置填充和间距
+        buttonPanel.setPadding(new Insets(10));
+        buttonPanel.setSpacing(10);
+        // 设置对齐方式
+        buttonPanel.setAlignment(Pos.CENTER_LEFT);
+        // 使VBox填满其区域
+        buttonPanel.setMaxWidth(Double.MAX_VALUE);
+        buttonPanel.setFillWidth(true);
+
+        // 设置按钮的基础和悬停样式
+        String baseStyle = "-fx-background-color: #4A90E2; -fx-text-fill: white; -fx-font-size: 18px; -fx-padding: 10px;";
+        String hoverStyle = "-fx-background-color: #357ABD; -fx-text-fill: white; -fx-font-size: 18px; -fx-padding: 10px;";
+
+        for (Node node : buttonPanel.getChildren()) {
+            if (node instanceof Control) {
+                Control control = (Control) node;
+                control.setStyle(baseStyle);
+                // 确保按钮的宽度充足
+                control.setMinWidth(150);
+                control.setMaxWidth(Double.MAX_VALUE);  // 允许按钮宽度填满VBox的宽度
+
+                // 设置鼠标悬停效果
+                control.setOnMouseEntered(e -> control.setStyle(hoverStyle));
+                control.setOnMouseExited(e -> control.setStyle(baseStyle));
+            }
+        }
+    }
+
 
 
 
@@ -272,4 +340,3 @@ public class DialImageProcessingApp extends Application {
         launch(args);
     }
 }
-

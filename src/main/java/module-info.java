@@ -6,6 +6,8 @@ module com.xupt.opengaugepro {
     requires javafx.swing;
     requires org.slf4j;
     requires org.controlsfx.controls;
+    requires okhttp3;
+    requires json;
 
     opens com.xupt.opengaugepro to javafx.fxml;
     exports com.xupt.opengaugepro;

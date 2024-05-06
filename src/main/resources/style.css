@@ -1,0 +1,69 @@
+/* 基本的背景样式 */
+.root {
+    -fx-background-size: cover;
+}
+
+/* 按钮样式 */
+.button {
+    -fx-background-color: #4A90E2;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 5px 10px;
+}
+
+.button:hover {
+    -fx-background-color: #357ABD;
+}
+
+/* 下拉框和文本框的通用样式 */
+.combo-box, .text-field {
+    -fx-pref-width: 200px; /* 设置宽度，根据需要调整 */
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 5px 10px;
+}
+
+/* 标签的样式 */
+.label {
+    -fx-text-fill: #333333;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+/* VBox 的样式 */
+.vbox {
+    -fx-spacing: 10px; /* 设置节点之间的间距 */
+    -fx-alignment: top-center; /* 顶部居中对齐 */
+}
+
+/* HBox 的样式 */
+.hbox {
+    -fx-spacing: 10px; /* 设置节点之间的间距 */
+    -fx-alignment: center-left; /* 居中左对齐 */
+}
+
+/* ScrollPane 的样式 */
+.scroll-pane {
+    -fx-background-color: transparent;
+}
+
+/* GridPane 的样式 */
+.grid-pane {
+    -fx-hgap: 10; /* 列之间的水平间隔 */
+    -fx-vgap: 10; /* 行之间的垂直间隔 */
+}
+
+/*!* 控制元素隐藏和显示的样式 *!*/
+/*.hidden {*/
+/*    -fx-max-height: 0;*/
+/*    -fx-pref-height: 0;*/
+/*    -fx-opacity: 0;*/
+/*    -fx-padding: 0;*/
+/*}*/
+
+/*.visible {*/
+/*    -fx-max-height: 2em; !* 根据需要调整高度 *!*/
+/*    -fx-pref-height: 2em; !* 根据需要调整高度 *!*/
+/*    -fx-opacity: 1;*/
+/*}*/

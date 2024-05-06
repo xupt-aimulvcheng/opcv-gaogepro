@@ -1,5 +1,6 @@
 package com.xupt.opengaugepro.imageprocessing;
 
+import com.xupt.opengaugepro.util.ImageUtils;
 import org.opencv.core.*;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.CLAHE;
@@ -7,7 +8,9 @@ import org.opencv.imgproc.Imgproc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.xupt.opengaugepro.entity.Params.*;
@@ -148,6 +151,7 @@ public class ImageProcessingService {
         return resizeImage(whiteBackground, 640, 480);
     }
 
+
     // 区域分割
     public Mat segmentDial(Mat image) {
         try {
@@ -194,18 +198,19 @@ public class ImageProcessingService {
     // 边缘强化方法
     public Mat enhanceEdges(Mat image) {
         // 首先检测表盘
-        Mat dial = detectDial(image);
-        if (dial == null || dial.empty()) { // 检测失败或返回空图像
+        if (image == null || image.empty()) { // 检测失败或返回空图像
             logger.error("detectDial返回了一个空图像");
             return null;
         }
 
         // 如果图像不是灰度图，转换为灰度图
         Mat edges = new Mat();
-        if (dial.channels() > 1) {
-            Imgproc.cvtColor(dial, edges, Imgproc.COLOR_BGR2GRAY);
+        if (image.channels() > 1) {
+            logger.info("图像不是灰度图，转换为灰度图");
+            Imgproc.cvtColor(image, edges, Imgproc.COLOR_BGR2GRAY);
         } else {
-            edges = dial.clone(); // 如果已经是灰度图，直接复制
+            logger.info("图像已经是灰度图，直接使用");
+            edges = image.clone(); // 如果已经是灰度图，直接复制
         }
 
         // 应用高斯模糊
@@ -235,6 +240,18 @@ public class ImageProcessingService {
 
     // 增强处理表盘图像
     public Mat enhanceImage(Mat image) {
+        // Mat mat = ImageUtils.InpainteMat(image);
+        // Mat mat1 = ImageUtils.StretchRestoreMat(image);
+        // Mat mat2 = ImageUtils.enhanceMat(image);
+        // Mat mat3 = ImageUtils.ContrastEnhanceMat(mat2);
+        // return ImageUtils.color_enhanceMat(mat3);
+        // return mat2;
+        // try {
+        //     if (isStretchRestore)
+        //         image = ImageUtils.StretchRestoreMat(image);
+        // } catch (IOException e) {
+        //     throw new RuntimeException(e);
+        // }
         return image;
     }
 
@@ -390,7 +407,8 @@ public class ImageProcessingService {
 
         return image;
     }
-    public Mat enhanceDigits(Mat image, double claheClipLimit, Size claheTileGridSize, float sharpenStrength, int thresholdType, int morphologySize) {
+    public Mat enhanceDigits(Mat image, double claheClipLimit, Size claheTileGridSize, float sharpenStrength, int thresholdType, double morphologySize) {
+        // image = ImageUtils.Quality(image);
         // 转换为灰度图像
         Mat grayImage = new Mat();
         cvtColor(image, grayImage, COLOR_BGR2GRAY);
@@ -406,7 +424,7 @@ public class ImageProcessingService {
 
         // 创建并锐化图像，以增强图像中的细节
         Mat sharpenKernel = new Mat(3, 3, CvType.CV_32F, new Scalar(0));
-        sharpenKernel.put(1, 1, sharpenStrength);
+        sharpenKernel.put(1, 1, sharpenStrength * 8);
         float[] surround = {-1, -1, -1, -1, 9, -1, -1, -1, -1}; // 旁边点的负值强化核心点
         sharpenKernel.put(0, 0, surround);
         Mat sharpenedImage = enhanceImage(image);
@@ -428,6 +446,8 @@ public class ImageProcessingService {
         // 创建结构元素，用于形态学操作。这里调整了算法的关键参数：
         // MORPH_RECT: 结构元素的形状，使用矩形用于闭运算处理边缘连接问题。
         // new Size(morphologySize, morphologySize): 定义结构元素的大小。
+        logger.info("morphologySize: " + morphologySize);
+
         Mat morphKernel = getStructuringElement(MORPH_RECT, new Size(morphologySize, morphologySize));
 
         // 应用形态学闭运算。闭运算用于关闭前景物体内部的小孔，或前景物体上的小黑点。
@@ -466,5 +486,6 @@ public class ImageProcessingService {
         }
 
         return image; // 返回增强后的原图，显示清晰的数字轮廓
-    }}
+    }
+}
 

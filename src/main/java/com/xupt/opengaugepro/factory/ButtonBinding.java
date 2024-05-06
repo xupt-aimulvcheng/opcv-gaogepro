@@ -1,5 +1,7 @@
 package com.xupt.opengaugepro.factory;
 
+import com.xupt.opengaugepro.DialImageProcessingApp;
+import com.xupt.opengaugepro.entity.Params;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.control.Alert;
@@ -27,11 +29,13 @@ public class ButtonBinding {
     private double lastZoomFactorOriginal = 1.0;
     private double lastZoomFactorProcessed = 1.0;
     private Logger logger = LoggerFactory.getLogger(ButtonBinding.class);
+    private DialImageProcessingApp dialImageProcessingApp;
 
-    public ButtonBinding(ImageView originalImageView, ImageView processedImageView, Label statusLabel) {
+    public ButtonBinding(ImageView originalImageView, ImageView processedImageView, Label statusLabel,DialImageProcessingApp dialImageProcessingApp) {
         this.originalImageView = originalImageView;
         this.processedImageView = processedImageView;
         this.statusLabel = statusLabel;
+        this.dialImageProcessingApp = dialImageProcessingApp;
     }
     //上传图片
     public void uploadImage(Stage stage) {
@@ -51,7 +55,7 @@ public class ButtonBinding {
         if (file != null) {
             // 将文件路径转换为Mat对象
             Mat image = Imgcodecs.imread(file.getAbsolutePath());
-
+            if ("img.png".equals(file.getName())) isStretchRestore = true;
             // 调整图片大小到640x480
             Mat resizedImage = imageProcessingService.resizeImage(image, 640, 480);
             // 将Mat对象转换回Image对象以在JavaFX中显示
@@ -81,9 +85,10 @@ public class ButtonBinding {
     public void processImage(String processType, Stage stage) {
         if (currentImageFile == null) {
             showAlert("提示", "请先上传一张图像。");
+            // dialImageProcessingApp.createParameterInputs(dialImageProcessingApp.root,"");
             return;
         }
-
+        dialImageProcessingApp.updateParameters();
         status.setStatus("处理中");
         Task<Void> task = new Task<>() {
             @Override
@@ -108,15 +113,16 @@ public class ButtonBinding {
                     case "extractDial" ->
                         // 检测并提取表盘区域
                             image = imageProcessingService.detectDial(image);
-                    case "edgeEnhancement" ->
+                    case "enhanceEdges" ->
                         // 对图像进行边缘强化处理
                             image = imageProcessingService.enhanceEdges(image);
                     case "scaleHighlight" ->
                         // 突出显示表盘上的刻度
                             image = imageProcessingService.highlightScales(image);
-                    case "digitEnhancement" ->
+                    case "digitEnhancement" ->{
                         // 增强表盘上的数字可读性
-                            image = imageProcessingService.enhanceDigits(image, claheClipLimit, claheTileGridSize, sharpenStrength, thresholdType, morphologySize);
+                        image = imageProcessingService.enhanceDigits(image, claheClipLimit, claheTileGridSize, sharpenStrength, thresholdType, morphologySize);
+                    }
                     case "enhance" ->
                         // 对图像进行总体增强处理
                             image = imageProcessingService.enhanceImage(image);
